@@ -21,3 +21,4 @@ cd ../../
 mkdir build
 cd build
 cmake ../ -DJSONLIB_DIR=${ROOT}
+make 
