@@ -1,0 +1,59 @@
+{
+  "structure": {
+    "n_atoms": 2,
+    "species": [
+      "H ",
+      "He"
+    ],
+    "position_1": [
+      0.0E+0,
+      0.0E+0,
+      0.0E+0
+    ],
+    "position_2": [
+      0.1E+1,
+      0.1E+1,
+      0.1E+1
+    ],
+    "positions": [
+      0.0E+0,
+      0.0E+0,
+      0.0E+0,
+      0.1E+1,
+      0.1E+1,
+      0.1E+1
+    ],
+    "positions_shape": [
+      3,
+      2
+    ]
+  },
+  "complex": {
+    "scalar_re": 0.2E+1,
+    "scalar_im": 0.3E+1,
+    "1d_array_re": [
+      0.0E+0,
+      0.2E+1
+    ],
+    "1d_array_im": [
+      0.1E+1,
+      0.3E+1
+    ],
+    "2d_array_re": [
+      0.0E+0,
+      0.2E+1,
+      0.4E+1,
+      0.6E+1
+    ],
+    "2d_array_im": [
+      0.1E+1,
+      0.3E+1,
+      0.5E+1,
+      0.7E+1
+    ],
+    "2d_array_shape": [
+      2,
+      2
+    ]
+  }
+}

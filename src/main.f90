@@ -8,10 +8,11 @@ program main
   use json_module
   implicit none
 
-  !> put overloads
+  !> 'put' overloads
   !> Might make sense to make a class extension of json_core
   interface put
-     procedure :: put_complex_scalar_dp, put_complex_1d_dp, put_complex_2d_dp
+     procedure ::  put_real_2d_dp, &
+                   put_complex_scalar_dp, put_complex_1d_dp, put_complex_2d_dp
   end interface put
 
   !> JSON object and trees
@@ -48,10 +49,6 @@ program main
        [cmplx(0._dp, 1._dp), cmplx(4._dp, 5._dp), &
         cmplx(2._dp, 3._dp), cmplx(6._dp, 7._dp)  ], [2, n_atoms]))
   
-  ! Allows inplace flattening of rank 2+ arrays
-  real(dp), pointer :: flattened_array(:)
-  complex(dp), pointer :: flattened_complex(:)
-
   
   !----------------
   !Main routine
@@ -77,15 +74,15 @@ program main
   ! One might imagine you want a 2D array stored as [ [], [], ... []] in JSON
   ! Can either loop over rank 2+ arrays using specific wrappers for the main
   ! data structures, or vectorise/flatten and attach the shape (column-major)
+
+  ! An example of option 1
   do ia = 1, n_atoms
      write(atom_index, '(I5)') ia
      call json%add(structure, 'position_'//trim(adjustl(atom_index)), positions(:, ia))
   enddo
 
-  flattened_array(1:size(positions)) => positions
-  call json%add(structure, 'positions', flattened_array)
-  call json%add(structure, 'positions_shape', shape(positions))
-  nullify(flattened_array)
+  ! Option 2 
+  call put(json, structure, positions, 'positions')
 
   ! Can't directly parse complex data of any type, hence use a wrapper
   call json%create_object(complex, 'complex')
@@ -105,7 +102,32 @@ program main
 
 contains
 
-  !> Free subroutines to 'put' data types into JSON tree 
+  !> Free subroutines to 'put' data types into JSON tree
+  !
+  ! TODO(Alex) Would make sense to switch data and label ordering in API
+  !            so it's consistent with the JSON library 
+  !
+  !> json      json library object
+  !> subtree   results tree in which to place data
+  !> data      data to parse
+  !> label     label of data in subtree
+  !
+  subroutine put_real_2d_dp(json, subtree, data, label)
+    type(json_core),              intent(inout) :: json
+    type(json_value), pointer,    intent(inout) :: subtree
+    real(dp), target, contiguous, intent(in)    :: data(:,:)
+    character(len=*),             intent(in)    :: label
+    !> Allows in-place flattening of rank 2+ arrays
+    real(dp),         pointer                   :: flattened_data(:)
+
+    flattened_data(1:size(data)) => data
+    call json%add(subtree, trim(label), flattened_data)
+    call json%add(subtree, trim(label)//"_shape", shape(data))
+    nullify(flattened_data)
+    
+  end subroutine put_real_2d_dp
+  
+  
   subroutine put_complex_scalar_dp(json, subtree, data, label)
     type(json_core),           intent(inout) :: json
     type(json_value), pointer, intent(inout) :: subtree
@@ -145,6 +167,8 @@ contains
     
   end subroutine put_complex_2d_dp
 
+  ! Would write wrappers for trivial cases allowing the whole output
+  ! to be abstracted 
 
   
 end program main
