@@ -16,6 +16,8 @@ program main
   end interface put
 
   !> JSON object and trees
+  !  TODO(Alex) Look at inheriting json_core in a derived class
+  !  and writing some light wrapper methods  
   type(json_core) :: json
   type(json_value), pointer :: results_tree, structure, complex
 
@@ -107,6 +109,12 @@ contains
   ! TODO(Alex) Would make sense to switch data and label ordering in API
   !            so it's consistent with the JSON library 
   !
+  ! TODO(Alex) Would make more sense if these subroutines
+  !            where member procedures
+  !
+  ! TODO(Alex) Should assert that the subtree is in
+  !            the json object 
+  ! 
   !> json      json library object
   !> subtree   results tree in which to place data
   !> data      data to parse
