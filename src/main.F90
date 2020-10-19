@@ -9,14 +9,14 @@
 ! A Buccheri 2020
 
 program main
-#ifdef JSON_OUTPUT  
+#ifdef JSON_OUTPUT
   use json_parser, only: json_core, json_value, initialise_tree, add_subtree, &
        output_tree, destroy, put, put_positions
 #endif
   use data 
   implicit none
 
-#ifdef JSON_OUTPUT 
+#ifdef JSON_OUTPUT
   !> JSON object and trees
   type(json_core) :: json
   type(json_value), pointer :: results_tree, structure, complex

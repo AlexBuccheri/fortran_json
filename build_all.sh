@@ -20,5 +20,5 @@ make -j install
 cd ${ROOT}
 mkdir build
 cd build
-cmake ../ -DJSONLIB_DIR=${ROOT}
+cmake ../ -DWITH_JSON=On -DJSONLIB_DIR=${ROOT}
 make 
