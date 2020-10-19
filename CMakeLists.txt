@@ -19,11 +19,15 @@ find_library(JSONLIB
 message("-- JSON library location: ${JSONLIB}")
 include_directories ("${JSONLIB_DIR}/lib")
 
+set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
+
 add_executable(main_exe)
 
 target_sources(main_exe
         PRIVATE
         src/main.f90
+	src/json_parser.f90
+	src/data.f90
         )
 
 target_link_libraries(main_exe
