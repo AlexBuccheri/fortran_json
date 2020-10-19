@@ -3,9 +3,15 @@ module data
   use,intrinsic :: iso_fortran_env, only: dp => real64
   implicit none
 
+  !> Unit. dalton (Da or u) in kilograms
+  real(dp), parameter :: dalton_to_kg = 1.66053906661e-27_dp 
+  
   !> Number of atoms
   integer, parameter :: n_atoms = 2
 
+  !> Mass of helium (kg)  
+  real(dp), parameter :: mass_He = 4.002602_dp * dalton_to_kg
+  
   !> Species labels
   character(len=2), dimension(n_atoms) :: species = ['H ', 'He']
 
