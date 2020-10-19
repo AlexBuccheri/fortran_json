@@ -17,7 +17,7 @@ cmake ../ -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${ROOT}
 make -j install 
 
 # Build fortran code that calls JSON library
-cd ../../
+cd ${ROOT}
 mkdir build
 cd build
 cmake ../ -DJSONLIB_DIR=${ROOT}

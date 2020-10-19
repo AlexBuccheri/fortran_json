@@ -1,10 +1,8 @@
-! Example JSON outputting using Jacobwilliams' json-fortran library 
-!
-! Ref: https://github.com/jacobwilliams/json-fortran/wiki/Example-Usage
+! Example JSON outputting using wrappers for Jacobwilliams' json-fortran library 
 ! A Buccheri 2020
 
 program main
-  use json_parser, only: json_core, json_value, put
+  use json_parser, only: json_core, json_value, initialise_tree, destroy, put
   use data 
   implicit none
 
@@ -17,29 +15,23 @@ program main
   
   !> Atomic index character 
   character(len=5) :: atom_index
+
+  ! Initialise object, with top level tree
+  call initialise_tree(json, results_tree)
+
+  ! Add and populate structure subtree
+  call add_subtree(json, results_tree, structure, 'structure')
   
+  ! Scalars: int, real(dp), logical, character
+  call put(json, structure, 'n_atoms', n_atoms)
+  call put(json, structure, 'mass', mass_He)
 
   
-  !----------------
-  !Main routine
-  !----------------
-
-  ! Initialize the class
-  call json%initialize()
-
-  ! Initialize JSON tree
-  call json%create_object(results_tree,'')
-
-  ! Add "structure" object to the tree
-  call json%create_object(structure, 'structure')
-  call json%add(results_tree, structure)
-
-  ! Add data
-  call json%add(structure, 'n_atoms', n_atoms)
-
   ! Rank 1 arrays
   call json%add(structure, 'species', species)
 
+
+  
   ! Can't parse rank 2 arrays and above 
   ! One might imagine you want a 2D array stored as [ [], [], ... []] in JSON
   ! Can either loop over rank 2+ arrays using specific wrappers for the main
@@ -54,22 +46,19 @@ program main
   ! Option 2 
   call put(json, structure, 'positions', positions)
 
-  ! Can't directly parse complex data of any type, hence use a wrapper
   call json%create_object(complex, 'complex')
   call json%add(results_tree, complex)
   call put(json, complex, 'scalar',   complex_scalar)
   call put(json, complex, '1d_array', complex_1d)
   call put(json, complex, '2d_array', complex_2d)
-  
+  !call put(json, complex, '3d_array', complex_3d)
+
   ! Write the file
-  call json%print(results_tree,'../results.json')
+  call output_tree(json, results_tree,'../results.json')
   
   ! Clean up
   nullify(structure, complex)
-  
-  !deallocate(structure)
-  call json%destroy(results_tree)
-
+  call destroy(json, results_tree)
 
 contains
 
