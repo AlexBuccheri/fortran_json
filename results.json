@@ -1,6 +1,8 @@
 {
   "structure": {
     "n_atoms": 2,
+    "mass_he": 0.664647698909132E-26,
+    "periodic": true,
     "species": [
       "H ",
       "He"
@@ -28,6 +30,7 @@
       2
     ]
   },
+  "functional": "PBE0",
   "complex": {
     "scalar_re": 0.2E+1,
     "scalar_im": 0.3E+1,
