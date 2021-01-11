@@ -23,7 +23,7 @@ set(JSONLIB_DIR "" CACHE STRING "Location of external JSON parsing library")
 
 
 if (WITH_JSON)
-    # Methods of Finding Dependencies: 
+    # Methods of finding dependencies demonstrated below
     # To add: findpackage, findJSON.cmake,
 
     string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} compiler_id)
@@ -49,16 +49,21 @@ if (WITH_JSON)
         INSTALL_COMMAND make install
      )
 
-   ExternalProject_Get_Property(INTERNAL_JSONLIB  INSTALL_DIR)
-     set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1 )    #   ${INSTALL_DIR})
-     add_library(JSONLIB SHARED IMPORTED GLOBAL)
-     set_target_properties(JSONLIB PROPERTIES IMPORTED_LOCATION ${JSON_LIB_DIR}/lib/jsonfortran)
-    add_dependencies(JSONLIB INTERNAL_JSON)
+#    ExternalProject_Get_Property(INTERNAL_JSONLIB  INSTALL_DIR)
+     set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    #   ${INSTALL_DIR})
+
+   add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
+   set_target_properties(JSONLIB PROPERTIES
+                                     IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib
+                                     INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)
+
+  # Should check that library name is correct else JSONLIB might be empty then one gets errors
 
    message("-- JSON library location: ${JSONLIB_DIR}")
-   link_directories ("${JSONLIB_DIR}/lib")
+   link_directories (${JSONLIB_DIR}/lib)
    include_directories(${JSONLIB_DIR}/lib)
-   set(LIBS ${LIBS} JSONLIB)
+   
+ #   set(LIBS ${LIBS} JSONLIB)
 
  endif()
 
@@ -92,9 +97,9 @@ target_sources(main_exe
 # Set preprocessing variable used in the source
 set_property(TARGET main_exe APPEND PROPERTY COMPILE_DEFINITIONS "JSON_OUTPUT")
 
-target_link_libraries(main_exe
+ target_link_libraries(main_exe
             PRIVATE  
-            ${LIBS}
+            JSONLIB
             )
-add_dependencies(main_exe INTERNAL_JSONLIB JSONLIB)
+add_dependencies(main_exe INTERNAL_JSONLIB)
 	    
