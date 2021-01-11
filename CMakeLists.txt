@@ -7,6 +7,9 @@ project(json_output VERSION 0.1.0
 # All external libraries stored in this list 
 set(LIBS)
 
+# Install root for all external libraries
+set(INSTALL_ROOT "${CMAKE_SOURCE_DIR}/external/install")
+
 
 # CMake variable to indicate whether or not to use JSON for output
 # parsing. Currently no alternative, hence default = ON (true)
@@ -32,36 +35,42 @@ if (WITH_JSON)
                  HINTS "${JSONLIB_DIR}/lib"
   	         )
 		 
-   # Use ExternalProject https://stackoverflow.com/questions/35934112/installing-an-externalproject-with-cmake
-   # Look at compatibility with submodules too           
+   # Use ExternalProject 
+   # TODO(Alex) Look at compatibility with submodules too           
 
   if (NOT JSONLIB)
      message("-- JSONLIB_DIR not passed via CMake args")
-     message("-- Cloning libjsonfortran from github and building")
+     set(LIB_TAG "8.2.1")
+     message("-- Cloning libjsonfortran ${LIB_TAG} from github and building")
 
      include(ExternalProject)
      ExternalProject_Add(INTERNAL_JSONLIB
          GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
          GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
          GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
-         GIT_TAG tags/8.2.1                   # Checks out into detached branch
+         GIT_TAG tags/${LIB_TAG}           # Checks out into detached branch
          PREFIX external
  	 BUILD_ALWAYS FALSE                 
-         CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
+         CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${INSTALL_ROOT}
          INSTALL_COMMAND make install
       )
 
-    set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    
+    # Accomodate the library's convention of nesting another directory in the installation folder
+    # Had to read their CMakeLists in order to establish this 
+    set(JSONLIB_DIR "${INSTALL_ROOT}/jsonfortran-${compiler_id}-${LIB_TAG}")    
     message("-- JSON install location: ${JSONLIB_DIR}")
 
     # ExternalProject results in a UTILITY target for INTERNAL_JSONLIB, which cannot be used
     # in target_link_libraries,  hence the need to define JSONLIB
     
     add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
-    # Options only work if the directory already exists 
+    # set_target_properties ptions only work if the directory already exists !!!
+    # TODO(Alex) See if there's a way around this I'm missing 
+    file(MAKE_DIRECTORY ${JSONLIB_DIR}/lib)
     set_target_properties(JSONLIB PROPERTIES
-                                      IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib # Removes need to use link_directories
-                                      INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)  # Removes need to use include_directories
+                                      IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib   # Removes need to use link_directories
+                                      INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib              # Removes need to use include_directories
+				      )
 
     #  --------------
     # Notes to self:
