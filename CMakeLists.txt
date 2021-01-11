@@ -20,41 +20,52 @@ set(JSONLIB_DIR "" CACHE STRING "Location of external JSON parsing library")
 # NOTE, CMake always evaluates variables in if statements, so
 # ALWAYS use variables them to avoid undefined behaviour
 
+
+
 if (WITH_JSON)
+    # Methods of Finding Dependencies: 
+    # To add: findpackage, findJSON.cmake,
+
     string(TOLOWER ${CMAKE_Fortran_COMPILER_ID} compiler_id)
 
-    # Methods of Finding Dependencies: 
-    # findpackage, external project, findJSON.cmake,
-    # ensure it's in the path, pass directory to a cmake variable 
-
-
-  # Should really call this if no library is found    
-  if (JSONLIB_DIR STREQUAL "")
-    message("-- JSONLIB_DIR not defined, so clone from github and build")
-
-    # Look at compatibility with submodules too
-    include(ExternalProject)
-    ExternalProject_Add(INTERNAL_JSONLIB
-      GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
-      GIT_TAG v8.2.1
-      GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
-      GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
-      PREFIX external
-      CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install 
-    )
-  endif()
-
-
-    set(JSONLIB_DIR "${CMAKE_SOURCE_DIR}/json-install")
     find_library(JSONLIB
                  NAME "jsonfortran"
-                 REQUIRED HINTS "${JSONLIB_DIR}/lib"
+                 HINTS "${JSONLIB_DIR}/lib"
   	         )
-    message("-- JSON library location: ${JSONLIB_DIR}")
- 
+		 
+  # Use ExternalProject https://stackoverflow.com/questions/35934112/installing-an-externalproject-with-cmake
+  # Look at compatibility with submodules too           GIT_TAG 8.2.1
 
-  link_directories ("${JSONLIB_DIR}/lib")
-  set(LIBS ${LIBS} JSONLIB)
+  if (NOT JSONLIB)
+    message("-- JSONLIB_DIR not defined, so clone from github and build")
+    include(ExternalProject)
+    ExternalProject_Add(INTERNAL_JSONLIB
+        GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
+        GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
+        GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
+        PREFIX external
+	BUILD_ALWAYS TRUE
+        CMAKE_ARGS -DSKIP_DOC_GEN=TRUE  -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
+        INSTALL_COMMAND make install
+     )
+
+   ExternalProject_Get_Property(INTERNAL_JSONLIB  INSTALL_DIR)
+     set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1 )    #   ${INSTALL_DIR})
+     add_library(JSONLIB SHARED IMPORTED GLOBAL)
+     set_target_properties(JSONLIB PROPERTIES IMPORTED_LOCATION ${JSON_LIB_DIR}/lib/jsonfortran)
+    add_dependencies(JSONLIB INTERNAL_JSON)
+
+   message("-- JSON library location: ${JSONLIB_DIR}")
+   link_directories ("${JSONLIB_DIR}/lib")
+   include_directories(${JSONLIB_DIR}/lib)
+   set(LIBS ${LIBS} JSONLIB)
+
+ endif()
+
+
+
+
+
 
 else ()
    # Developer must add another library 
@@ -65,7 +76,9 @@ message("LIBS= ${LIBS}")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
+
 add_executable(main_exe)
+
 
 target_sources(main_exe
         PRIVATE
@@ -74,7 +87,7 @@ target_sources(main_exe
 	src/data.f90
         )
 
-add_dependencies(main_exe LIBS)
+
 
 # Set preprocessing variable used in the source
 set_property(TARGET main_exe APPEND PROPERTY COMPILE_DEFINITIONS "JSON_OUTPUT")
@@ -83,4 +96,5 @@ target_link_libraries(main_exe
             PRIVATE  
             ${LIBS}
             )
+add_dependencies(main_exe INTERNAL_JSONLIB JSONLIB)
 	    
