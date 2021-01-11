@@ -17,10 +17,9 @@ option(WITH_JSON "Using default output parser (JSON)" ON)
 # Initialised as an empty string 
 set(JSONLIB_DIR "" CACHE STRING "Location of external JSON parsing library")
 
+
 # NOTE, CMake always evaluates variables in if statements, so
 # ALWAYS use variables them to avoid undefined behaviour
-
-
 
 if (WITH_JSON)
     # Methods of finding dependencies demonstrated below
@@ -33,34 +32,36 @@ if (WITH_JSON)
                  HINTS "${JSONLIB_DIR}/lib"
   	         )
 		 
-  # Use ExternalProject https://stackoverflow.com/questions/35934112/installing-an-externalproject-with-cmake
-  # Look at compatibility with submodules too           GIT_TAG 8.2.1
+   # Use ExternalProject https://stackoverflow.com/questions/35934112/installing-an-externalproject-with-cmake
+   # Look at compatibility with submodules too           
 
   if (NOT JSONLIB)
-    message("-- JSONLIB_DIR not passed via CMake args")
-    message("-- Cloning libjsonfortran from github and building")
+     message("-- JSONLIB_DIR not passed via CMake args")
+     message("-- Cloning libjsonfortran from github and building")
 
-    include(ExternalProject)
-    ExternalProject_Add(INTERNAL_JSONLIB
-        GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
-        GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
-        GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
-        PREFIX external
-	BUILD_ALWAYS FALSE                 
-        CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
-        INSTALL_COMMAND make install
-     )
+     include(ExternalProject)
+     ExternalProject_Add(INTERNAL_JSONLIB
+         GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
+         GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
+         GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
+         GIT_TAG tags/8.2.1                   # Checks out into detached branch
+         PREFIX external
+ 	 BUILD_ALWAYS FALSE                 
+         CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
+         INSTALL_COMMAND make install
+      )
 
-   set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    
-   message("-- JSON install location: ${JSONLIB_DIR}")
+    set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    
+    message("-- JSON install location: ${JSONLIB_DIR}")
 
-   add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
-   set_target_properties(JSONLIB PROPERTIES
-                                      IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib
-                                      INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)
-
-   link_directories (${JSONLIB_DIR}/lib)         # Library location
-   # include_directories(${JSONLIB_DIR}/lib)    # Module files
+    # ExternalProject results in a UTILITY target for INTERNAL_JSONLIB, which cannot be used
+    # in target_link_libraries,  hence the need to define JSONLIB
+    
+    add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
+    # Options only work if the directory already exists 
+    set_target_properties(JSONLIB PROPERTIES
+                                      IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib # Removes need to use link_directories
+                                      INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)  # Removes need to use include_directories
 
     #  --------------
     # Notes to self:
@@ -75,22 +76,19 @@ if (WITH_JSON)
     #              HINTS "${JSONLIB_DIR}/lib"
     # 	         )   
 
- endif()
+    endif (NOT JSONLIB)  
 
-set(LIBS ${LIBS} JSONLIB)
+    set(LIBS ${LIBS} JSONLIB)
 
 else ()
    # Developer must add another library 
    message(FATAL_ERROR "-- No output parser library selected. The code will not build")
 endif()
 
-message("LIBS= ${LIBS}")
 
 set(CMAKE_Fortran_MODULE_DIRECTORY ${PROJECT_BINARY_DIR}/modules)
 
-
 add_executable(main_exe)
-
 
 target_sources(main_exe
         PRIVATE
@@ -99,14 +97,12 @@ target_sources(main_exe
 	src/data.f90
         )
 
-
-
 # Set preprocessing variable used in the source
 set_property(TARGET main_exe APPEND PROPERTY COMPILE_DEFINITIONS "JSON_OUTPUT")
 
- target_link_libraries(main_exe
+target_link_libraries(main_exe
             PRIVATE  
-            JSONLIB
+            ${LIBS}
             )
 
 # Required such that ExternalProject_add command runs 
