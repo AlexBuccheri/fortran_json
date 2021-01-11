@@ -37,40 +37,47 @@ if (WITH_JSON)
   # Look at compatibility with submodules too           GIT_TAG 8.2.1
 
   if (NOT JSONLIB)
-    message("-- JSONLIB_DIR not defined, so clone from github and build")
+    message("-- JSONLIB_DIR not passed via CMake args")
+    message("-- Cloning libjsonfortran from github and building")
+
     include(ExternalProject)
     ExternalProject_Add(INTERNAL_JSONLIB
         GIT_REPOSITORY https://github.com/jacobwilliams/json-fortran
         GIT_SHALLOW TRUE                   # git clone --depth 1 to avoid downloading the whole history 
         GIT_PROGRESS TRUE                  # Report --progress of git clone. More verbose CMake output, essentially 
         PREFIX external
-	BUILD_ALWAYS TRUE
-        CMAKE_ARGS -DSKIP_DOC_GEN=TRUE  -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
+	BUILD_ALWAYS FALSE                 
+        CMAKE_ARGS -DSKIP_DOC_GEN=TRUE -DCMAKE_INSTALL_PREFIX=${CMAKE_SOURCE_DIR}/json-install
         INSTALL_COMMAND make install
      )
 
-#    ExternalProject_Get_Property(INTERNAL_JSONLIB  INSTALL_DIR)
-     set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    #   ${INSTALL_DIR})
+   set(JSONLIB_DIR ${CMAKE_SOURCE_DIR}/json-install/jsonfortran-gnu-8.2.1)    
+   message("-- JSON install location: ${JSONLIB_DIR}")
 
    add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
    set_target_properties(JSONLIB PROPERTIES
-                                     IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib
-                                     INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)
+                                      IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib
+                                      INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib)
 
-  # Should check that library name is correct else JSONLIB might be empty then one gets errors
+   link_directories (${JSONLIB_DIR}/lib)         # Library location
+   # include_directories(${JSONLIB_DIR}/lib)    # Module files
 
-   message("-- JSON library location: ${JSONLIB_DIR}")
-   link_directories (${JSONLIB_DIR}/lib)
-   include_directories(${JSONLIB_DIR}/lib)
-   
- #   set(LIBS ${LIBS} JSONLIB)
+    #  --------------
+    # Notes to self:
+    #  --------------
+    # Can't use get_property as no installation directory option is used in ExternalProject_add:
+    # ExternalProject_Get_Property(INTERNAL_JSONLIB  INSTALL_DIR)
+
+    # Assume find_library can't work because the library isn't present
+    # when CMake configures. It should work with FetchContent 
+    #  find_library(JSONLIB
+    #              NAME "jsonfortran"
+    #              HINTS "${JSONLIB_DIR}/lib"
+    # 	         )   
 
  endif()
 
-
-
-
-
+set(LIBS ${LIBS} JSONLIB)
 
 else ()
    # Developer must add another library 
@@ -101,5 +108,7 @@ set_property(TARGET main_exe APPEND PROPERTY COMPILE_DEFINITIONS "JSON_OUTPUT")
             PRIVATE  
             JSONLIB
             )
+
+# Required such that ExternalProject_add command runs 
 add_dependencies(main_exe INTERNAL_JSONLIB)
 	    
