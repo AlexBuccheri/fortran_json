@@ -79,15 +79,16 @@ if (WITH_JSON)
     # in target_link_libraries,  hence the need to define JSONLIB
     
     add_library(JSONLIB SHARED STATIC IMPORTED GLOBAL)
-    add_dependencies(JSONLIB INTERNAL_JSONLIB)
 
     # set_target_properties ptions only work if the directory already exists !!!
     # TODO(Alex) See if there's a way around this I'm missing 
     file(MAKE_DIRECTORY ${JSONLIB_DIR}/lib)
+
     set_target_properties(JSONLIB PROPERTIES
                                       IMPORTED_LOCATION ${JSONLIB_DIR}/lib/libjsonfortran.dylib   # Removes need to use link_directories
                                       INTERFACE_INCLUDE_DIRECTORIES ${JSONLIB_DIR}/lib              # Removes need to use include_directories
 				      )
+    add_dependencies(JSONLIB INTERNAL_JSONLIB)
 
     message("-- JSONLIB ${JSONLIB}")
     set(LIBS ${LIBS} ${JSONLIB})
@@ -134,7 +135,5 @@ target_link_libraries(main_exe
             ${LIBS}
             )
 
-if (NOT JSONLIB)
-   # Required such that ExternalProject_add command runs
-   add_dependencies(main_exe INTERNAL_JSONLIB)
-endif()
+# Required such that ExternalProject_add command runs
+add_dependencies(main_exe INTERNAL_JSONLIB)
